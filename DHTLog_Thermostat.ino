@@ -18,8 +18,8 @@ Connect DHT21 / AMS2301 at GPIO2
 #include <ESP8266mDNS.h>
 
 // WiFi connection
-const char* ssid = "PocketCube-7C81";
-const char* password = "8LN5G8D3";
+const char* ssid = "wifi-name";
+const char* password = "wifi-pass";
 
 // ntp timestamp
 unsigned long ulSecs2000_timer=0;
@@ -155,7 +155,7 @@ void WiFiStart()
   ArduinoOTA.setHostname("thermo-esp8266");
 
   // No authentication by default
-  ArduinoOTA.setPassword((const char *)"5622");
+  //ArduinoOTA.setPassword((const char *)"5622");
 
   ArduinoOTA.onStart([]() {
     Serial.println("Start");

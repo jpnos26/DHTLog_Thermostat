@@ -19,7 +19,7 @@ Connect DHT21 / AMS2301 at GPIO2
 
 // WiFi connection
 const char* ssid = "wifi-name";
-const char* password = "wifi-pass";
+const char* password = "wifi-pwd";
 
 // ntp timestamp
 unsigned long ulSecs2000_timer=0;
@@ -36,7 +36,8 @@ float *pfTemp,*pfHum;           // array for temperature and humidity measuremen
 
 unsigned long ulReqcount;       // how often has a valid page been requested
 unsigned long ulReconncount;    // how often did we connect to WiFi
-
+float dhtTemp;			// dht read temperature
+float dhtUm;			// dht read umidity
 // Create an instance of the server on Port 80
 WiFiServer server(80);
 
@@ -287,7 +288,7 @@ unsigned long MakeList (WiFiClient *pclient, bool bStream)
       sTable += "['";
       sTable += epoch_to_string(pulTime[ulIndex]).c_str();
       sTable += "',";
-      sTable += pfTemp[ulIndex];
+	  sTable += pfTemp[ulIndex];
       sTable += ",";
       sTable += pfHum[ulIndex];
       sTable += "],\n";
@@ -366,19 +367,28 @@ void loop()
   if (millis()>=ulNextMeas_ms) 
   {
     ulNextMeas_ms = millis()+ulMeasDelta_ms;
-
-    pfHum[ulMeasCount%ulNoMeasValues] = dht.readHumidity();
-    pfTemp[ulMeasCount%ulNoMeasValues] = dht.readTemperature();
-    pulTime[ulMeasCount%ulNoMeasValues] = millis()/1000+ulSecs2000_timer;
+	dhtTemp = dht.readTemperature();
+	dhtUm	= dht.readHumidity();
+	    if (isnan(dhtTemp) || isnan(dhtUm)) 
+			{
+      		Serial.println("Failed to read from DHT sensor!"); 
+		}   
+		else
+			{
+		pfHum[ulMeasCount%ulNoMeasValues] = dhtUm;
+    	pfTemp[ulMeasCount%ulNoMeasValues] = dhtTemp;
+    	pulTime[ulMeasCount%ulNoMeasValues] = millis()/1000+ulSecs2000_timer;
     
-    Serial.print("Logging Temperature: "); 
-    Serial.print(pfTemp[ulMeasCount%ulNoMeasValues]);
-    Serial.print(" deg Celsius - Humidity: "); 
-    Serial.print(pfHum[ulMeasCount%ulNoMeasValues]);
-    Serial.print("% - Time: ");
-    Serial.println(pulTime[ulMeasCount%ulNoMeasValues]);
+    	Serial.print("Logging Temperature: "); 
+    	Serial.print(pfTemp[ulMeasCount%ulNoMeasValues]);
+    	Serial.print(" deg Celsius - Humidity: "); 
+    	Serial.print(pfHum[ulMeasCount%ulNoMeasValues]);
+    	Serial.print("% - Time: ");
+    	Serial.println(pulTime[ulMeasCount%ulNoMeasValues]);
     
-    ulMeasCount++;
+    	ulMeasCount++;
+		}
+	
   }
   
   //////////////////////////////
@@ -507,7 +517,7 @@ void loop()
     sResponse += F("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\">");
     sResponse += F("<p align=\"center\"><FONT SIZE=+3><FONT-WEIGHT=bold>WI-FI Logger per Temperatura e Umidita");
     sResponse += F("<FONT SIZE=+1><FONT-WEIGHT=normal><BR>");
-    sResponse += F("<a href=\"/\">Home Page</a><BR><BR>Misurazioni ogni");
+    sResponse += F("<a href=\"/\">Home Page</a><BR><BR>Misurazioni ogni: ");
     sResponse += ulMeasDelta_ms;
     sResponse += F("ms<BR></p>");
     // here the big table will follow later - but let us prepare the end first
